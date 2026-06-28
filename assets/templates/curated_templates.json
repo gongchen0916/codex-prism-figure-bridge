@@ -1,0 +1,128 @@
+{
+  "description": "Curated figure-type to template alias mappings for automated selection. Prefer portfolio xml templates with validation ok.",
+  "whitelist_automation": [
+    "column-scatter",
+    "box-and-whiskers-graph",
+    "box-and-whiskers-with-asterisks",
+    "before-after",
+    "before-after-with-error",
+    "scatter-plot-with-bars",
+    "points-and-grouped-bars",
+    "grouped-graph-spacing",
+    "combine-points-and-bars",
+    "volcano-plot",
+    "spaghetti-plot",
+    "theoretical-curves",
+    "odds-ratio-forest-plot",
+    "bland-altman-plot",
+    "xy-frequency-distribution",
+    "replicates-with-connected-means"
+  ],
+  "figure_types": [
+    {
+      "id": "column_scatter",
+      "keywords": ["column", "scatter", "dot", "jitter", "individual points", "bar with dots"],
+      "template": "column-scatter",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "box_whisker",
+      "keywords": ["box", "whisker", "boxplot", "quartile", "median"],
+      "template": "box-and-whiskers-graph",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "box_whisker_significance",
+      "keywords": ["box", "whisker", "asterisk", "significance", "p value", "stars"],
+      "template": "box-and-whiskers-with-asterisks",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "before_after",
+      "keywords": ["before", "after", "paired", "pre post"],
+      "template": "before-after",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "before_after_error",
+      "keywords": ["before", "after", "error bar", "paired error"],
+      "template": "before-after-with-error",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "grouped_bars",
+      "keywords": ["grouped bar", "grouped bars", "bar chart", "spacing"],
+      "template": "grouped-graph-spacing",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "points_grouped_bars",
+      "keywords": ["points", "grouped bars", "overlay points"],
+      "template": "points-and-grouped-bars",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "scatter_bars",
+      "keywords": ["scatter", "bars", "bar overlay"],
+      "template": "scatter-plot-with-bars",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "volcano",
+      "keywords": ["volcano", "log fold", "fold change", "differential expression"],
+      "template": "volcano-plot",
+      "table_type": "XY",
+      "has_x_column": true
+    },
+    {
+      "id": "spaghetti",
+      "keywords": ["spaghetti", "longitudinal", "individual trajectories"],
+      "template": "spaghetti-plot",
+      "table_type": "XY",
+      "has_x_column": true
+    },
+    {
+      "id": "dose_response",
+      "keywords": ["dose", "response", "ic50", "ec50", "curve fit", "concentration"],
+      "template": "theoretical-curves",
+      "table_type": "XY",
+      "has_x_column": true
+    },
+    {
+      "id": "forest_plot",
+      "keywords": ["forest", "odds ratio", "meta analysis", "confidence interval"],
+      "template": "odds-ratio-forest-plot",
+      "table_type": "Column",
+      "has_x_column": false
+    },
+    {
+      "id": "bland_altman",
+      "keywords": ["bland", "altman", "agreement", "bias"],
+      "template": "bland-altman-plot",
+      "table_type": "XY",
+      "has_x_column": true
+    },
+    {
+      "id": "xy_curve",
+      "keywords": ["xy", "line graph", "curve", "time course", "kinetics"],
+      "template": "theoretical-curves",
+      "table_type": "XY",
+      "has_x_column": true
+    },
+    {
+      "id": "replicates_means",
+      "keywords": ["replicate", "connected mean", "mean line"],
+      "template": "replicates-with-connected-means",
+      "table_type": "Column",
+      "has_x_column": false
+    }
+  ]
+}
