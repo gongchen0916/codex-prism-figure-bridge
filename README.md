@@ -21,8 +21,6 @@ The host runs on macOS and communicates with a Windows 11 VM through Parallels. 
 
 Template selection and data-replacement logic are code, and are included. Actual templates, catalogs, palettes, native project files, and their private adapters are not part of this update. `prism_windows_*` library tools remain advertised but require that separate library installation; this repository alone does not supply their private dependencies or acceptance evidence.
 
-The small metadata examples already present under `assets/templates/` are historical repository content, unchanged by this update. They are not the current local template library. Existing `examples/` and older linked-artwork references are legacy examples; their macOS workflows are not the current MCP execution backend.
-
 ## Requirements and registration
 
 Use Python 3.10 or newer on the Mac for this source distribution. Native execution additionally requires Parallels, a configured Windows 11 VM, licensed Windows Prism and PowerPoint, and a Windows Python environment with `pywin32` for COM operations.
