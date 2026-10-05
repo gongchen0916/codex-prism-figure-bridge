@@ -1,6 +1,6 @@
 # Codex Prism Figure Bridge
 
-MCP server and Python helpers for GraphPad Prism. This update publishes the **0.9.0 MCP core source**, with Windows Prism execution, PowerPoint COM/OLE support, persistent execution records, and runtime identity checks.
+MCP server and Python helpers for GraphPad Prism. This update publishes the **0.9.1 MCP core source**, with Windows Prism execution, PowerPoint COM/OLE support, persistent execution records, and runtime identity checks.
 
 This is a **code-only distribution**. It does not include the local template library, source-specific adapters, scientific data, previews, acceptance records, or machine configuration. A fresh clone can start the MCP server and inspect its tools; drawing requires separately provisioned templates and a configured, validated Windows execution environment.
 
@@ -15,9 +15,13 @@ The host runs on macOS and communicates with a Windows 11 VM through Parallels. 
 - Recovery does not kill Prism, close user documents, or replay the original command automatically.
 - Code changes require reconnecting the MCP server. Runtime identity checks prevent a long-lived server from silently mixing releases.
 
+## Structured error receipts
+
+Version 0.9.1 returns JSON error receipts with `error_code`, `operation_id`, `execution_state`, `retryable`, and `next_action`. See [the error contract](MCP_ERRORS.md) for field semantics and compatibility. Runtime and argument checks can establish that native execution did not start. A lost worker or missing journal after a handler starts cannot establish that; such failures prohibit replay.
+
 ## Included and excluded files
 
-`MCP_SOURCE_MANIFEST.json` lists the 27 current runtime source files and their SHA-256 hashes. Those files are unchanged copies of the local MCP implementation. Tests and documentation are distributed separately from that source manifest.
+`MCP_SOURCE_MANIFEST.json` lists the 28 distributed runtime source files and their SHA-256 hashes. The manifest records this code-only release; concurrent private-library work is separate. Tests and documentation are distributed separately from that source manifest.
 
 Template selection and data-replacement logic are code, and are included. Actual templates, catalogs, palettes, native project files, and their private adapters are not part of this update. `prism_windows_*` library tools remain advertised but require that separate library installation; this repository alone does not supply their private dependencies or acceptance evidence.
 

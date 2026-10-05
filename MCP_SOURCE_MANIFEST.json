@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
+  "version": "0.9.1",
   "scope": "MCP core source only",
   "source_files": [
     {
@@ -27,6 +27,10 @@
       "sha256": "f5e74c15739adf7f9ba012898cf41710cbfcb8af5afa10db9a599bdcc2dc2725"
     },
     {
+      "path": "scripts/mcp_error_receipts.py",
+      "sha256": "684dc76186602c380acdbacccb03de81c9147ac04c8e52c18b287ba1b579b5e5"
+    },
+    {
       "path": "scripts/native_inventory.py",
       "sha256": "bccc732b0b225fad2ac6a58e5cff44e8dee6ca8fbc48e60d4687d3e8a7d1d252"
     },
@@ -40,7 +44,7 @@
     },
     {
       "path": "scripts/prism_mcp_server.py",
-      "sha256": "7613682617c02ee5a0bd4ed518c5aa9041ffd095d4fc8167225d40b7dc734c04"
+      "sha256": "dabbcfe948591494937e0a38018c0b2a7f2814dab9b2b4a6f3a52cc2749505de"
     },
     {
       "path": "scripts/published_templates.py",
@@ -118,7 +122,7 @@
     "Local assets/prism_execution.json, credentials and app registrations"
   ],
   "notes": [
-    "Source files listed above are byte-identical to the current local MCP implementation.",
+    "Source provenance for the code-only 0.9.1 distribution; concurrent private-library work is not part of this release.",
     "Library-specific tools require the separately provisioned private template library and its adapters.",
     "This manifest is source provenance, not native Prism/PPT acceptance."
   ]

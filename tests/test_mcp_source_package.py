@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class SourcePackageTests(unittest.TestCase):
     def test_manifest_matches_distributed_runtime_bytes(self):
         manifest = json.loads((ROOT / 'MCP_SOURCE_MANIFEST.json').read_text())
-        self.assertEqual(manifest['version'], '0.9.0')
+        self.assertEqual(manifest['version'], '0.9.1')
         self.assertEqual(len({item['path'] for item in manifest['source_files']}),
                          len(manifest['source_files']))
         for item in manifest['source_files']:
@@ -45,7 +45,7 @@ class SourcePackageTests(unittest.TestCase):
                 text=True, capture_output=True, timeout=15, cwd=root, check=True)
         responses = [json.loads(line) for line in completed.stdout.splitlines()]
         self.assertEqual([item['id'] for item in responses], list(range(1, 7)))
-        self.assertEqual(responses[0]['result']['serverInfo']['version'], '0.9.0')
+        self.assertEqual(responses[0]['result']['serverInfo']['version'], '0.9.1')
         self.assertEqual(responses[1]['result']['tools'], responses[4]['result']['tools'])
         environment = json.loads(responses[2]['result']['content'][0]['text'])
         self.assertFalse(responses[2]['result']['isError'])

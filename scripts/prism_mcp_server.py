@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent
 SKILL_ROOT = ROOT.parent
 DEFAULT_OUTPUT_ROOT = SKILL_ROOT / "runs"
 PYTHON = os.environ.get("PYTHON", sys.executable)
-SERVER_VERSION = "0.9.0"
+SERVER_VERSION = "0.9.1"
 # Compile the bootstrap helper from the exact bytes used for its identity.
 # A normal import can reuse foreign modules or timestamp-valid stale bytecode.
 _runtime_path = ROOT / 'runtime_state.py'
@@ -50,7 +50,8 @@ def load_module(name: str, path: Path):
 
 bridge = load_module("prism_bridge", ROOT / "prism_bridge.py")
 matcher = load_module("template_matcher", ROOT / "template_matcher.py")
-RUNTIME_STATE.finish_loading({'bridge': bridge, 'matcher': matcher})
+error_receipts = load_module('mcp_error_receipts', ROOT / 'mcp_error_receipts.py')
+RUNTIME_STATE.finish_loading({'bridge': bridge, 'matcher': matcher, 'error_receipts': error_receipts})
 
 TOOLS: list[dict[str, Any]] = [
     {
@@ -1305,14 +1306,21 @@ def tool_windows_library(action: str, args: dict[str, Any]) -> list[dict[str, st
     return text_content(json.dumps(json.loads(result.stdout),ensure_ascii=False))
 
 
-def call_tool(name: str, args: Any) -> list[dict[str, str]]:
+def call_tool(name: str, args: Any, *, context=None) -> list[dict[str, str]]:
+    context = context if context is not None else {}
+    context['phase'] = 'runtime'
     if name != 'prism_env':
         RUNTIME_STATE.assert_current()
+    context['phase'] = 'arguments'
     args = validate_tool_arguments(name, args)
+    context['phase'] = 'environment'
+    if name in('prism_draw','prism_redraw','prism_export_project','prism_preview_template','prism_list_palettes','prism_windows_run'):
+        bridge._require_native_execution()
+    context['phase'] = 'execute'
+    if name not in error_receipts.OBSERVATION_TOOLS:
+        context['before'] = error_receipts.snapshot(bridge)
     if name in('prism_windows_catalog','prism_windows_scope','prism_windows_blueprint','prism_windows_prepare','prism_windows_run'):
         return tool_windows_library(name.removeprefix('prism_windows_'),args)
-    if name in('prism_draw','prism_redraw','prism_export_project','prism_preview_template','prism_list_palettes'):
-        bridge._require_native_execution()
     if name == "prism_env":
         return tool_prism_env(args)
     if name == 'prism_recover_execution':
@@ -1460,31 +1468,37 @@ def handle(request: dict[str, Any]) -> dict[str, Any] | None:
     if method == "tools/list":
         return {"jsonrpc": "2.0", "id": request_id, "result": {"tools": TOOLS}}
     if method == "tools/call":
-        params = request.get("params") or {}
+        context = {'phase': 'arguments'}
+        name = ''
         try:
-            content = call_tool(str(params.get("name")), params.get("arguments") or {})
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {"content": content, "isError": False},
-            }
-        except RuntimeRestartRequired as exc:
-            return {
-                "jsonrpc": "2.0", "id": request_id,
-                "result": {"content": text_content(json.dumps(exc.status, ensure_ascii=False)), "isError": True},
-            }
-        except McpError as exc:
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {"content": text_content(str(exc)), "isError": True},
-            }
+            params = request.get("params", {})
+            if not isinstance(params, dict):
+                raise McpError('Tool params must be a JSON object')
+            name = params.get('name')
+            if not isinstance(name, str):
+                raise McpError('Tool name must be a string')
+            content = call_tool(name, params.get('arguments', {}), context=context)
+            failure = error_receipts.native_failure(content, name)
+            if failure is not None:
+                message = failure.get('prism_log') or failure.get('log') or 'Native execution reported failure'
+                receipt = error_receipts.make_receipt(
+                    RuntimeError(str(message)), tool=name, phase=context['phase'],
+                    before=context.get('before'), after=error_receipts.snapshot(bridge))
+                content = [dict(content[0], text=json.dumps(dict(failure, **receipt), ensure_ascii=False)), *content[1:]]
+            # Returned summaries retain their legacy isError and native result
+            # flags; explicit native failures also carry the new receipt fields.
+            return {"jsonrpc": "2.0", "id": request_id,
+                    "result": {"content": content, "isError": False}}
         except Exception as exc:
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {"content": text_content(str(exc)), "isError": True},
-            }
+            receipt = error_receipts.make_receipt(
+                exc, tool=name, phase=context['phase'], before=context.get('before'),
+                after=error_receipts.snapshot(bridge) if context['phase'] == 'execute' and name not in error_receipts.OBSERVATION_TOOLS else None,
+                invalid_arguments=isinstance(exc, McpError),
+                runtime_status=exc.status if isinstance(exc, RuntimeRestartRequired) else None)
+            if isinstance(exc, McpError):
+                receipt['mcp_error_code'] = exc.code
+            return {"jsonrpc": "2.0", "id": request_id,
+                    "result": {"content": text_content(json.dumps(receipt, ensure_ascii=False)), "isError": True}}
     if request_id is None:
         return None
     return {
