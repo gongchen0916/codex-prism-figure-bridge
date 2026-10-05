@@ -1,145 +1,67 @@
 # Codex Prism Figure Bridge
 
-Codex skill and helper scripts for building GraphPad Prism figures from data, exporting publication-friendly vector artwork, and keeping PowerPoint or Adobe Illustrator documents connected to the underlying Prism source file on macOS.
+MCP server and Python helpers for GraphPad Prism. This update publishes the **0.9.0 MCP core source**, with Windows Prism execution, PowerPoint COM/OLE support, persistent execution records, and runtime identity checks.
 
-This repository is intentionally practical rather than magical. macOS does not provide Windows-style editable Prism OLE embedding inside PowerPoint or Illustrator. The bridge uses stable file-based links:
+This is a **code-only distribution**. It does not include the local template library, source-specific adapters, scientific data, previews, acceptance records, or machine configuration. A fresh clone can start the MCP server and inspect its tools; drawing requires separately provisioned templates and a configured, validated Windows execution environment.
 
-- Prism `.pzfx` remains the editable scientific source.
-- Prism command scripts export SVG/PDF/TIF/EPS to predictable paths.
-- PowerPoint or Illustrator links to the exported artwork.
-- A watcher or refresh script re-exports from Prism and updates the linked artwork.
+## Current execution model
 
-## What This Solves
+The host runs on macOS and communicates with a Windows 11 VM through Parallels. The Windows worker invokes Prism's native command-file interface. PowerPoint packaging uses Windows COM to create editable Prism OLE objects. The current backend does not use OpenAI Computer Use or macOS Accessibility to draw figures.
 
-- Generate Prism `.pzfx` files from CSV/TSV data using reusable templates.
-- Export Prism graphs through command files without clicking the GUI.
-- Package a PowerPoint slide where the figure links back to the Prism source.
-- Build an Illustrator `.ai` file with a linked Prism-exported PDF.
-- Refresh Illustrator after the Prism source is modified.
-- Maintain a local template catalog for fast template matching.
+- MCP uses local stdio, with a fixed tool catalog.
+- `prism_env` with `runtime_only: true` checks loaded code and execution records without launching Prism or probing the VM.
+- Health results distinguish runtime, transport, configuration, native/PPT queues, VM, executor, application processes, OLE, and the UI input route. Unchecked layers remain explicitly unverified.
+- A caller timeout does not cancel native execution. An uncertain operation blocks further dispatch until its exact operation ID is reconciled.
+- Recovery does not kill Prism, close user documents, or replay the original command automatically.
+- Code changes require reconnecting the MCP server. Runtime identity checks prevent a long-lived server from silently mixing releases.
 
-## Current Limitations
+## Included and excluded files
 
-- macOS PowerPoint does not support true Windows OLE Prism objects.
-- Illustrator cannot link directly to `.pzfx`; it links to a Prism-exported PDF/EPS/SVG.
-- In testing, Illustrator scripting could open SVG as editable artwork, but could not reliably create SVG as a linked `placedItem`. PDF worked as the linked update target.
-- Exported PDF/EPS/SVG files are artwork, not live Prism objects.
-- Downloaded third-party Prism templates are not included by default. Keep only templates you are licensed to redistribute.
+`MCP_SOURCE_MANIFEST.json` lists the 27 current runtime source files and their SHA-256 hashes. Those files are unchanged copies of the local MCP implementation. Tests and documentation are distributed separately from that source manifest.
 
-## Repository Layout
+Template selection and data-replacement logic are code, and are included. Actual templates, catalogs, palettes, native project files, and their private adapters are not part of this update. `prism_windows_*` library tools remain advertised but require that separate library installation; this repository alone does not supply their private dependencies or acceptance evidence.
 
-```text
-SKILL.md                         Codex skill instructions
-scripts/                         Prism MCP server and CLI bridge
-references/                      Notes on Prism/PPT workflow and template handling
-assets/templates/                Small curated template metadata
-examples/ppt-linked/             PowerPoint refresh/link helper scripts
-examples/illustrator-linked/     Illustrator linked-PDF workflow
-```
+The small metadata examples already present under `assets/templates/` are historical repository content, unchanged by this update. They are not the current local template library. Existing `examples/` and older linked-artwork references are legacy examples; their macOS workflows are not the current MCP execution backend.
 
-## Install As A Codex Skill
+## Requirements and registration
 
-Clone this repository into your Codex skills folder:
+Use Python 3.10 or newer on the Mac for this source distribution. Native execution additionally requires Parallels, a configured Windows 11 VM, licensed Windows Prism and PowerPoint, and a Windows Python environment with `pywin32` for COM operations.
+
+Clone the source, then register the MCP server:
 
 ```bash
-mkdir -p ~/.codex/skills
-git clone https://github.com/YOUR_USER/codex-prism-figure-bridge.git \
-  ~/.codex/skills/codex-prism-figure-bridge
-```
-
-Then install the MCP bridge:
-
-```bash
-cd ~/.codex/skills/codex-prism-figure-bridge
+git clone https://github.com/gongchen0916/codex-prism-figure-bridge.git
+cd codex-prism-figure-bridge
 python3 scripts/install_mcp.py
 ```
 
-## Basic CLI Usage
+The installer preserves an existing matching registration and reports a conflict instead of replacing a different registration. It does not install or activate Prism, create a VM, or provision a template library.
+
+Optional SVG preview dependencies are checked or installed separately:
 
 ```bash
-python3 scripts/prism_bridge.py env
-python3 scripts/prism_bridge.py list-templates
-python3 scripts/prism_bridge.py build \
-  --data raw.csv \
-  --template column-scatter \
-  --outdir outputs/figure_1 \
-  --name figure_1 \
-  --title "Figure 1"
+python3 scripts/setup_render.py --check
+python3 scripts/setup_render.py
 ```
 
-To export through Prism:
+Machine configuration belongs in the ignored local file `assets/prism_execution.json`. It must identify the intended VM, shared folder, Windows executables, and Prism executable fingerprint. The executor validates its schema and acceptance phase before native dispatch. Missing configuration leaves execution unavailable; it does not enable a macOS fallback. See `scripts/windows_prism_executor.py` for the policy contract. Do not label an environment accepted before its native save/reopen and OLE behavior has been verified.
+
+## Verification and recovery
+
+Run the isolated tests without starting Prism or PowerPoint:
 
 ```bash
-python3 scripts/prism_bridge.py build \
-  --data raw.csv \
-  --template column-scatter \
-  --outdir outputs/figure_1 \
-  --name figure_1 \
-  --title "Figure 1" \
-  --run-prism
+python3 -B -m unittest discover -s tests -q
 ```
 
-On macOS, Prism command files should be opened by file association:
+These tests cover runtime identity, registration, health reporting, execution policy, timeout fencing, recovery, and the source-only MCP protocol. They are not native figure acceptance.
 
-```bash
-open outputs/figure_1/figure_1_export.pzc
-```
+After reconnecting a configured MCP, call `prism_env` with `runtime_only: true`. Require equal loaded/disk identities and `restart_required: false`. For an uncertain operation, read its operation ID and call `prism_recover_execution` with that ID. Inspect original outputs when late completion is confirmed; do not repeat the original drawing command merely because the client timed out.
 
-In local testing, `open -a "Prism 11" file.pzc` launched Prism but did not execute the command file.
+A completed command or a running process does not establish scientific correctness, OLE responsiveness, or figure quality. Native deliveries still require saved-data checks, save/reopen verification, visual inspection, and representative OLE activation at the intended physical size.
 
-## PowerPoint Workflow
+## Security and license
 
-The PowerPoint workflow uses linked or replaceable exported artwork plus a `prismbridge://` URL back to the `.pzfx` file. The practical chain is:
+Do not commit credentials, app registrations, local execution policies, template libraries, scientific data, or generated outputs. New ignore rules prevent those files from entering routine commits; review the staged file list before every push.
 
-```text
-Prism .pzfx -> Prism export -> PPT figure image -> prismbridge URL -> Prism source
-```
-
-See:
-
-- `examples/ppt-linked/prism_ppt_sync.py`
-- `examples/ppt-linked/prismbridge_url_handler.py`
-- `references/prism-ppt-flow.md`
-
-## Illustrator Workflow
-
-The Illustrator workflow uses a linked PDF exported from Prism:
-
-```text
-Prism .pzfx -> linked_prism_export.pdf -> Illustrator placed item
-```
-
-Files:
-
-- `examples/illustrator-linked/create_linked_ai.jsx`
-- `examples/illustrator-linked/refresh_prism_to_ai.py`
-- `examples/illustrator-linked/watch_prism_ai_link.py`
-- `examples/illustrator-linked/open_prism_source_from_ai.jsx`
-
-The AI placed item stores the Prism source path in `note` and `URL` metadata. The refresh script:
-
-1. Opens a Prism `.pzc` command file.
-2. Re-exports PDF/SVG/EPS.
-3. Normalizes Prism's numbered exports back to the stable linked filename.
-4. Refreshes the Illustrator placed item.
-5. Saves the `.ai` document.
-
-## Security Notes
-
-This repository should not contain:
-
-- API keys or tokens
-- personal absolute paths
-- patient or unpublished experimental data
-- large generated PPT/AI/PDF/TIF outputs
-- proprietary Prism templates unless redistribution is permitted
-
-Before publishing changes:
-
-```bash
-rg -n --hidden -S '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|OPENAI_API_KEY|ANTHROPIC_API_KEY|api[_-]?key|secret|password|token|/Users/)' .
-```
-
-## License
-
-MIT for the bridge code. Prism itself and any Prism templates remain subject to their own licenses.
+The bridge code is MIT licensed. Prism, PowerPoint, and separately installed templates retain their respective licenses.

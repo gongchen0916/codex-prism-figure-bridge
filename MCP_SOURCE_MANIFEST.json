@@ -1,0 +1,125 @@
+{
+  "version": "0.9.0",
+  "scope": "MCP core source only",
+  "source_files": [
+    {
+      "path": "scripts/batch_template_contract.py",
+      "sha256": "f1255d7908ccb5cc6f08a930e9887fa87b6edfbbd2eb9590fa2f8c1115d48061"
+    },
+    {
+      "path": "scripts/batch_template_pilot.py",
+      "sha256": "3e96750cb9cb22040ba670d5d9be5b6c59e337b4666d7fcce114c9d4821ac300"
+    },
+    {
+      "path": "scripts/batch_template_report.py",
+      "sha256": "81531e27ba4967cb2c44772f45a9cb6a37896c2583b5252f1579cda8449199c9"
+    },
+    {
+      "path": "scripts/bridge_health.py",
+      "sha256": "aa55f0b5e4fb60f139bad1fe8c78bcc839e603c8d2daca16dde33258515149e2"
+    },
+    {
+      "path": "scripts/execution_state.py",
+      "sha256": "8791c7f0f0561cdd6e14c64a9056feaaba19dd367df6183d57e60f64c358f206"
+    },
+    {
+      "path": "scripts/install_mcp.py",
+      "sha256": "f5e74c15739adf7f9ba012898cf41710cbfcb8af5afa10db9a599bdcc2dc2725"
+    },
+    {
+      "path": "scripts/native_inventory.py",
+      "sha256": "bccc732b0b225fad2ac6a58e5cff44e8dee6ca8fbc48e60d4687d3e8a7d1d252"
+    },
+    {
+      "path": "scripts/native_palette.py",
+      "sha256": "06c65bc7e46767388bb1a7ffe6412bf6adef6b1c1fbea5706ce67e93314f2306"
+    },
+    {
+      "path": "scripts/prism_bridge.py",
+      "sha256": "064412bd721e58f8a84a037cb0d9e430f8646f8719c82118dccac98845f56439"
+    },
+    {
+      "path": "scripts/prism_mcp_server.py",
+      "sha256": "7613682617c02ee5a0bd4ed518c5aa9041ffd095d4fc8167225d40b7dc734c04"
+    },
+    {
+      "path": "scripts/published_templates.py",
+      "sha256": "e53953233c8a80c2f88822fed069555db6fef733c92eba5018157f3366476c4a"
+    },
+    {
+      "path": "scripts/runtime_state.py",
+      "sha256": "b0687b5430bfc4e54844236be4dd4f28650dd07c9c85e2fd849a4e2460a72328"
+    },
+    {
+      "path": "scripts/setup_render.py",
+      "sha256": "f9b61292f3df1c501ad073f434737246c07b9d1309643abab64951e8d6034bcd"
+    },
+    {
+      "path": "scripts/svg_render.py",
+      "sha256": "d63a9139618af5bd310e8a2955805be9fabbcd9f819e4afcc514e486a0a7c03d"
+    },
+    {
+      "path": "scripts/svg_text_ink.py",
+      "sha256": "7a0c2ddf84c99fe89f856d28d6b14f489850e0e40c4028e9a0729cce2a7f211f"
+    },
+    {
+      "path": "scripts/template_gallery.py",
+      "sha256": "d0c33ad213f0b8f192c0ba3d1992631a665a4921959a39658b18e96ea05c2226"
+    },
+    {
+      "path": "scripts/template_identity.py",
+      "sha256": "c88a6930586434842a53327655f1eb284571a2216f4b8d6f36307318bb0d1935"
+    },
+    {
+      "path": "scripts/template_matcher.py",
+      "sha256": "ae952f9cd114bae81ee48d02d048838777649f05f86539ec720fbc9c9da0784f"
+    },
+    {
+      "path": "scripts/template_styles.py",
+      "sha256": "06c5f67b31df78680f0d969adab948011a88f71b67ab6aaebf04ae5e83a537a2"
+    },
+    {
+      "path": "scripts/windows_font_cache.py",
+      "sha256": "1929849f3eaeb1d4604da5ec3bf8ae5b04f367e783e6bb0942236b0788520ec7"
+    },
+    {
+      "path": "scripts/windows_library.py",
+      "sha256": "68b945233c50b657102f1b3a78a1e4acb8687e4dd14964dbc09f9c70be63726b"
+    },
+    {
+      "path": "scripts/windows_local_phases.py",
+      "sha256": "e2074f030206c253df18eece9803e6a8a2468088a3c81d2947dc00a3aff4e4c3"
+    },
+    {
+      "path": "scripts/windows_prism_executor.py",
+      "sha256": "f61a38dd278479280b9f4455417a2a5dde320e8792f84f473868ec25faa9717d"
+    },
+    {
+      "path": "scripts/windows_prism_ole.py",
+      "sha256": "a0f64396e8290a0aede77580d9b19f548cf42d8b9c0004719997acd3ad0d6049"
+    },
+    {
+      "path": "scripts/windows_prism_ppt.py",
+      "sha256": "b9676d6da09ec0add2e5a213c4a382eb7fefd06dae8febb3c3d3fb662265fd3e"
+    },
+    {
+      "path": "scripts/windows_prism_ppt_worker.py",
+      "sha256": "077b4df3193ed2cbbdccd37c32c9146ef7f4b14dd222f4dfcbadfffd19d183de"
+    },
+    {
+      "path": "scripts/windows_prism_worker.py",
+      "sha256": "735cf8c06a9771fdc45f5fbd3792977846ac8de3287f012bc90c5e740e131929"
+    }
+  ],
+  "excluded": [
+    "Template files, catalogs, thumbnails and palettes",
+    "Private source-specific adapters under development/library_v1 and scripts/windows_clinical49_family.py",
+    "Experimental candidate probes, native acceptance receipts and run outputs",
+    "Local assets/prism_execution.json, credentials and app registrations"
+  ],
+  "notes": [
+    "Source files listed above are byte-identical to the current local MCP implementation.",
+    "Library-specific tools require the separately provisioned private template library and its adapters.",
+    "This manifest is source provenance, not native Prism/PPT acceptance."
+  ]
+}

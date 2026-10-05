@@ -24,3 +24,24 @@ tmp/
 .env
 .venv/
 node_modules/
+
+# Local-only MCP dependencies and evidence
+.env.*
+.review/
+.codex/
+.claude/
+*.pzt
+*.pzfx.gz
+*.ctb
+*.zip
+*.key
+*.pem
+runs/
+development/
+assets/prism_execution.json
+assets/templates/
+assets/palettes/
+*.pkl
+*.mat
+*.csv
+*.tsv
