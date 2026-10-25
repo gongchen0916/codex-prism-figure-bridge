@@ -1,4 +1,4 @@
-import json,sys,tempfile,unittest,uuid
+import hashlib,json,sys,tempfile,unittest,uuid
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
@@ -77,5 +77,54 @@ class PPTFenceTests(unittest.TestCase):
         ident=ppt.execution_status()['operation_id']
         result=ppt.recover(ident,self.policy)
         self.assertEqual(result['state'],'cancelled_before_dispatch');self.assertFalse(result['blocked'])
+
+    def fast_job(self):
+        def activated(policy,action,job,**kwargs):
+            q=json.loads((job/'ppt-request.json').read_text());(job/'ppt.claim').write_text('123')
+            result={'id':q['id'],'source_sha256':q['source_sha256'],'state':'activated_awaiting_edit_verification'}
+            (job/'ppt-receipt.json').write_text(json.dumps(result));return result
+        with patch.object(ppt.executor,'guest_call',side_effect=activated):ppt.embed(self.project,self.root/'fast',activate=True,policy=self.policy)
+        job=Path(json.loads((self.root/'fast/windows-ppt-job.json').read_text())['job']);q=json.loads((job/'ppt-request.json').read_text())
+        sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+        (job/'fast-finish-request.json').write_text(json.dumps({'schema':1,'id':q['id'],'source_sha256':q['source_sha256'],
+            'ppt_request_sha256':sha(job/'ppt-request.json'),'ppt_receipt_sha256':sha(job/'ppt-receipt.json')}))
+        (job/'ppt-session-closed.json').write_text(json.dumps({'id':q['id'],'closed':True}));return job
+
+    def test_combined_finish_stays_fenced_after_parent_close(self):
+        job=self.fast_job();self.assertTrue(ppt.execution_status()['blocked'],'Closed parent is not completed combined cleanup/reopen')
+        for name in('fast-finish','fast-accept'):(job/(name+'.claim')).write_text(json.dumps({'id':job.name,'pid':123}))
+        (job/'fast-finish-result.json').write_text(json.dumps({'id':job.name,'status':'completed'}))
+        self.assertTrue(ppt.execution_status()['blocked'])
+        acceptance={'id':job.name,'fresh_readonly_reopen':True,'prior_actual_DoVerb_verified':True}
+        (job/'closed-native-acceptance.json').write_text(json.dumps(acceptance))
+        (job/'fast-accept-result.json').write_text(json.dumps({'id':job.name,'status':'completed','acceptance':acceptance,'empty_office':{'status':'empty_PowerPoint_normally_closed'}}))
+        self.assertFalse(ppt.execution_status()['blocked'])
+
+    def test_recovery_checks_finalizer_liveness_and_cancels_unclaimed_stages(self):
+        job=self.fast_job();(job/'fast-finish.claim').write_text(json.dumps({'id':job.name,'pid':456}))
+        def observed(policy,action,path,**kwargs):
+            if action=='ppt_status':return {'id':job.name,'available':True,'helper_state':'exited','instances':[]}
+            return {'id':job.name,'finish_helper_state':'alive','accept_helper_state':'not_claimed'}
+        with patch.object(ppt.executor,'guest_call',side_effect=observed),self.assertRaises(RuntimeError):ppt.recover(job.name,self.policy)
+        self.assertTrue(ppt.execution_status()['blocked'])
+        def exited(policy,action,path,**kwargs):
+            return {'id':job.name,'available':True,'helper_state':'exited','instances':[],'finish_helper_state':'exited','accept_helper_state':'not_claimed'}
+        with patch.object(ppt.executor,'guest_call',side_effect=exited):result=ppt.recover(job.name,self.policy)
+        self.assertEqual(result['state'],'interrupted_process_exit');self.assertTrue(json.loads((job/'fast-accept.claim').read_text())['cancelled_before_dispatch'])
+
+    def test_late_finalizer_claim_cannot_race_terminal_recovery(self):
+        job=self.fast_job();(job/'fast-finish.claim').write_text(json.dumps({'id':job.name,'pid':456}))
+        def race(policy,action,path,**kwargs):
+            if action=='ppt_status':return {'id':job.name,'available':True,'helper_state':'exited','instances':[]}
+            (job/'fast-accept.claim').write_text(json.dumps({'id':job.name,'pid':789}))
+            return {'id':job.name,'finish_helper_state':'exited','accept_helper_state':'not_claimed'}
+        with patch.object(ppt.executor,'guest_call',side_effect=race),self.assertRaises(RuntimeError):ppt.recover(job.name,self.policy)
+        self.assertTrue(ppt.execution_status()['blocked'])
+
+    def test_corrupt_finish_intent_fails_closed(self):
+        job=self.fast_job();(job/'fast-finish-request.json').write_text('[]')
+        try:status=ppt.execution_status()
+        except Exception as error:self.fail('Corrupt stage must return a blocked status, not escape: '+str(error))
+        self.assertEqual(status['state'],'invalid_journal');self.assertTrue(status['blocked'])
 
 if __name__=='__main__':unittest.main()

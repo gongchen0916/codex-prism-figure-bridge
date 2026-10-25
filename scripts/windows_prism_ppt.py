@@ -15,6 +15,30 @@ def _journal():
     import prism_bridge as bridge
     return bridge.PRISM_LOCK_PATH.with_name(bridge.PRISM_LOCK_PATH.name+'.ppt.json')
 
+def _fast_finish_done(job,operation_id,source_sha256):
+    """A closed parent does not release an in-flight combined finalizer."""
+    path=job/'fast-finish-request.json'
+    if not path.exists():return None
+    def read(name):
+        p=job/name
+        if p.is_symlink()or p.stat().st_size>131072:raise ValueError('Unsafe combined PPT stage record')
+        value=json.loads(p.read_text())
+        if not isinstance(value,dict)or value.get('id')!=operation_id:raise ValueError('Combined PPT stage identity changed')
+        return value
+    intent=read('fast-finish-request.json')
+    if (intent.get('schema')!=1 or intent.get('source_sha256')!=source_sha256
+        or intent.get('ppt_request_sha256')!=hashlib.sha256((job/'ppt-request.json').read_bytes()).hexdigest()
+        or intent.get('ppt_receipt_sha256')!=hashlib.sha256((job/'ppt-receipt.json').read_bytes()).hexdigest()):
+        raise ValueError('Combined PPT intent differs from original native activation')
+    names=('fast-finish.claim','fast-accept.claim','fast-finish-result.json','fast-accept-result.json','closed-native-acceptance.json')
+    if not all((job/name).is_file()for name in names):return False
+    for name in names[:2]:read(name)
+    finish=read('fast-finish-result.json');accept=read('fast-accept-result.json');certificate=read('closed-native-acceptance.json')
+    return (finish.get('status')=='completed'and accept.get('status')=='completed'and accept.get('acceptance')==certificate
+        and certificate.get('fresh_readonly_reopen')is True and certificate.get('prior_actual_DoVerb_verified')is True
+        and isinstance(accept.get('empty_office'),dict)
+        and accept['empty_office'].get('status')in('empty_PowerPoint_normally_closed','existing_presentations_preserved','PowerPoint_already_exited'))
+
 
 def execution_status():
     """Local receipt inspection only. Never starts or contacts either app."""
@@ -51,8 +75,11 @@ def execution_status():
             if closed.is_file():
                 if closed.is_symlink()or closed.stat().st_size>8192:raise ValueError('Unsafe PPT session marker')
                 marker=json.loads(closed.read_text());complete=marker.get('id')==value['id']and marker.get('closed')is True
+        finish_done=_fast_finish_done(job,value['id'],value['source_sha256'])
+        if finish_done is not None:complete=complete and finish_done
         return {'state':'completed'if complete else'interactive'if interactive else value['state'],
                 'blocked':not complete,'operation_id':value['id'],'job':str(job),
+                'combined_finish_pending':finish_done is False,
                 'note':'PPT receipt completion is not scientific or figure-style approval.'}
     except (OSError,ValueError,KeyError,TypeError)as error:
         return {'state':'invalid_journal','blocked':True,'operation_id':None,'error':str(error)}
@@ -72,6 +99,18 @@ def recover(operation_id,policy):
             raise RuntimeError('Cannot establish exact PPT helper/app state')
         if observed.get('helper_state')!='exited' or observed.get('instances'):
             raise RuntimeError('PPT helper or Prism/PowerPoint is still active; preserve unsaved work before recovery')
+        if (job/'fast-finish-request.json').exists():
+            helper=Path(__file__).with_name('windows_ppt_finalizer_status.py')
+            finalizer=executor.guest_call(policy,'status',job,worker=helper,timeout=10)
+            if (finalizer.get('id')!=operation_id or any(finalizer.get(key)not in('exited','not_claimed','cancelled_before_dispatch')
+                for key in('finish_helper_state','accept_helper_state'))):
+                raise RuntimeError('Combined PPT finalizer is alive or uncertain; no reset or replay')
+            # An unclaimed late RPC cannot act after this terminal recovery.
+            for name,key in(('fast-finish.claim','finish_helper_state'),('fast-accept.claim','accept_helper_state')):
+                if finalizer[key]!='not_claimed':continue
+                try:
+                    with(job/name).open('x')as stream:json.dump({'id':operation_id,'cancelled_before_dispatch':True},stream)
+                except FileExistsError:raise RuntimeError('Combined PPT stage was claimed during recovery; inspect again, no reset')
         value['state']='interrupted_process_exit'
     execution_state.atomic_write(_journal(),value)
     return execution_status()

@@ -1100,7 +1100,7 @@ def recover_execution(operation_id):
             current=prism_process_inventory()
             if not current['available']:raise RuntimeError('Cannot verify Prism process state; recovery refused')
             if current['instances']:raise RuntimeError('Prism is still running. Save your work and quit Prism before recovering an uncertain execution.')
-            if not record['prism_processes']:raise RuntimeError('No original Prism process was observed; native launch outcome needs manual diagnosis, not a blind retry')
+            if not record['prism_processes'] and not windows_prism_executor.dispatched_exit_proof(record,execution_target()):raise RuntimeError('No original Prism process was observed; native launch outcome needs manual diagnosis, not a blind retry')
             execution_state.save(_execution_journal(),record,'interrupted_process_exit','Prism process exit verified; prior outputs are incomplete/unverified. Use a fresh output directory.')
         return execution_status()
 

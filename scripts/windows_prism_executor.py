@@ -229,6 +229,35 @@ def refresh(script, policy):
     sync_outputs(script, job, json.loads((job / 'request.json').read_text()))
 
 
+def dispatched_exit_proof(record, policy):
+    """Bound a exited dispatcher/native stage when transient PID was missed.
+
+    This is interruption evidence only, never successful figure acceptance.
+    An alive or inaccessible dispatcher, any app process, changed inputs or
+    a missing owned-stage native log keeps the original execution fence.
+    """
+    try:
+        script=Path(record['script'])
+        if hashlib.sha256(script.read_bytes()).hexdigest()!=record['script_sha256']:return False
+        meta=json.loads(script.with_suffix('.windows-job.json').read_text())
+        job=Path(policy['shared_root'])/'PrismBridge/jobs'/meta['id']
+        if str(uuid.UUID(meta['id']))!=meta['id'] or str(job)!=meta['job']:return False
+        req=json.loads((job/'request.json').read_text());receipt=json.loads((job/'receipt.json').read_text())
+        if (req['id']!=meta['id'] or receipt.get('id')!=meta['id']
+            or receipt.get('state')!='unknown' or req['script']!=script.name
+            or req['hashes'].get(script.name)!=record['script_sha256']
+            or req['prism_exe']!=policy['prism_exe'] or req['prism_sha256']!=policy['prism_sha256']
+            or not (job/'dispatch.claim').read_text().strip().isdigit()):return False
+        for name,digest in req['hashes'].items():
+            if Path(name).name!=name or hashlib.sha256((job/'input'/name).read_bytes()).hexdigest()!=digest:return False
+        status=guest_call(policy,'native_status',job)
+        return bool(status.get('id')==meta['id'] and status.get('helper_state')=='exited'
+                    and status.get('available') is True and status.get('instances')==[]
+                    and status.get('own_stage_observed_in_native_log') is True
+                    and status.get('local_stage')==receipt.get('local_stage'))
+    except (KeyError,ValueError,OSError,RuntimeError,subprocess.SubprocessError):return False
+
+
 def cancel_not_started(script,policy):
     """Win the same exclusive claim used by the worker, or refuse cancellation.
 

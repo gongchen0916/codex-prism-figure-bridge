@@ -19,7 +19,8 @@ import datetime
 
 
 def _snapshot(root):
-    directory = Path(root).resolve() / 'scripts'
+    root = Path(root).resolve()
+    directory = root / 'scripts'
     files, errors = {}, []
     try:
         paths = sorted(directory.rglob('*.py'))
@@ -38,7 +39,7 @@ def _snapshot(root):
         errors.append('No Python runtime files found')
     # The Windows library executor uses owned, source-only sibling modules.
     # Bind these too; do not traverse fixtures, environments or run evidence.
-    library = Path(root).resolve() / 'development/library_v1'
+    library = root / 'development/library_v1'
     if library.exists() or library.is_symlink():
         try:
             if library.is_symlink() or not library.is_dir():
@@ -46,13 +47,13 @@ def _snapshot(root):
             for path in sorted(library.iterdir()):
                 if path.suffix not in ('.py', '.json'):
                     continue
-                relative = path.relative_to(Path(root).resolve()).as_posix()
+                relative = path.relative_to(root).as_posix()
                 if path.is_symlink() or not path.is_file():
                     raise ValueError('Unsafe Windows library runtime file: ' + relative)
                 files[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
         except (OSError, ValueError) as exc:
             errors.append('development/library_v1: ' + str(exc))
-    policy=Path(root).resolve()/'assets/prism_execution.json'
+    policy=root/'assets/prism_execution.json'
     if policy.exists()or policy.is_symlink():
         try:
             if policy.is_symlink()or not policy.is_file()or policy.stat().st_size>4096:raise ValueError('Unsafe execution policy')

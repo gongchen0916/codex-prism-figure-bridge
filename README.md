@@ -21,7 +21,7 @@ Version 0.9.1 returns JSON error receipts with `error_code`, `operation_id`, `ex
 
 ## Included and excluded files
 
-`MCP_SOURCE_MANIFEST.json` lists the 28 distributed runtime source files and their SHA-256 hashes. The manifest records this code-only release; concurrent private-library work is separate. Tests and documentation are distributed separately from that source manifest.
+`MCP_SOURCE_MANIFEST.json` lists the 29 distributed runtime source files and their SHA-256 hashes. The manifest records this code-only release; concurrent private-library work is separate. Tests and documentation are distributed separately from that source manifest.
 
 Template selection and data-replacement logic are code, and are included. Actual templates, catalogs, palettes, native project files, and their private adapters are not part of this update. `prism_windows_*` library tools remain advertised but require that separate library installation; this repository alone does not supply their private dependencies or acceptance evidence.
 
@@ -61,6 +61,10 @@ These tests cover runtime identity, registration, health reporting, execution po
 After reconnecting a configured MCP, call `prism_env` with `runtime_only: true`. Require equal loaded/disk identities and `restart_required: false`. For an uncertain operation, read its operation ID and call `prism_recover_execution` with that ID. Inspect original outputs when late completion is confirmed; do not repeat the original drawing command merely because the client timed out.
 
 A completed command or a running process does not establish scientific correctness, OLE responsiveness, or figure quality. Native deliveries still require saved-data checks, save/reopen verification, visual inspection, and representative OLE activation at the intended physical size.
+
+Recovery also handles a dispatched native job whose brief Prism process was missed by the original PID observation. It requires unchanged staged inputs, an exited dispatcher, an empty application inventory, and evidence that the exact owned stage appeared in the native log. This can establish an interrupted process exit; it cannot certify the figure or authorize replay.
+
+For an existing combined PowerPoint finalizer supplied by a separate local installation, an early parent-close receipt does not release the execution fence. Both finalizer stages and the actual saved-object reopen certificate must agree. The bundled finalizer status worker only reads existing records and helper liveness; it cannot open or close applications, complete a drawing, or replay a job.
 
 ## Security and license
 

@@ -40,7 +40,7 @@
     },
     {
       "path": "scripts/prism_bridge.py",
-      "sha256": "064412bd721e58f8a84a037cb0d9e430f8646f8719c82118dccac98845f56439"
+      "sha256": "af985652acc53441803723da5877f65d4df5be33e49f993da03841098dafe813"
     },
     {
       "path": "scripts/prism_mcp_server.py",
@@ -52,7 +52,7 @@
     },
     {
       "path": "scripts/runtime_state.py",
-      "sha256": "b0687b5430bfc4e54844236be4dd4f28650dd07c9c85e2fd849a4e2460a72328"
+      "sha256": "220b4fdfe85d74702fd25d5873f49c8e08b8998f501baac581cd678fe7b283de"
     },
     {
       "path": "scripts/setup_render.py",
@@ -95,8 +95,12 @@
       "sha256": "e2074f030206c253df18eece9803e6a8a2468088a3c81d2947dc00a3aff4e4c3"
     },
     {
+      "path": "scripts/windows_ppt_finalizer_status.py",
+      "sha256": "7ba35e95b6c662784898f97b3b9646c5b6c7a009f6c677db84560a5180fd35c8"
+    },
+    {
       "path": "scripts/windows_prism_executor.py",
-      "sha256": "f61a38dd278479280b9f4455417a2a5dde320e8792f84f473868ec25faa9717d"
+      "sha256": "1778863a37b8d3a44adff40a1cd1ef7500c0a10b88860f7b70e5a5600d15189a"
     },
     {
       "path": "scripts/windows_prism_ole.py",
@@ -104,7 +108,7 @@
     },
     {
       "path": "scripts/windows_prism_ppt.py",
-      "sha256": "b9676d6da09ec0add2e5a213c4a382eb7fefd06dae8febb3c3d3fb662265fd3e"
+      "sha256": "bd879cb20a06820ae5d37220baaad0111dbb9a75851f59923ef9cb41a686aea3"
     },
     {
       "path": "scripts/windows_prism_ppt_worker.py",
@@ -112,7 +116,7 @@
     },
     {
       "path": "scripts/windows_prism_worker.py",
-      "sha256": "735cf8c06a9771fdc45f5fbd3792977846ac8de3287f012bc90c5e740e131929"
+      "sha256": "023de9b39428f36c2aa0401c9f17b750525b8b9846b7e7255241611db31cb35a"
     }
   ],
   "excluded": [

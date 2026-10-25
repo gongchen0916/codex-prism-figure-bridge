@@ -69,6 +69,29 @@ def ppt_status(job):
     return {'id':request['id'],'helper_state':state,**inventory()}
 
 
+def native_status(job):
+    """Inspect the claimed dispatcher without replaying or starting an app."""
+    import win32api,win32process,pywintypes
+    job,request,local=validate_job(job)
+    claim=job/'dispatch.claim'
+    state='unknown'
+    try:
+        pid=int(claim.read_text())
+        handle=win32api.OpenProcess(0x1000,False,pid)
+        try:state='alive'if win32process.GetExitCodeProcess(handle)==259 else'exited'
+        finally:handle.Close()
+    except pywintypes.error as error:
+        if error.winerror==87:state='exited'
+    except (ValueError,OSError):pass
+    log=read_log(local/Path(request['script']).with_suffix('.log'))
+    expected='SetPath "'+str(local)+'"'
+    observed=inventory()
+    return {'id':request['id'],'helper_state':state,
+            'own_stage_observed_in_native_log':expected in log,
+            'native_log_sha256':hashlib.sha256(log.encode('utf-8')).hexdigest(),
+            'local_stage':str(local),**observed}
+
+
 def read_log(path):
     if not path.exists():
         return ''
@@ -173,7 +196,7 @@ def execute(job):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=('run', 'collect', 'inventory','ppt_status'))
+    parser.add_argument('action', choices=('run', 'collect', 'inventory','ppt_status','native_status'))
     parser.add_argument('job', nargs='?')
     args = parser.parse_args()
     if args.job and args.job.startswith('b64.'):
@@ -182,6 +205,8 @@ def main():
         result = inventory()
     elif args.action == 'ppt_status':
         result=ppt_status(args.job)
+    elif args.action == 'native_status':
+        result=native_status(args.job)
     elif args.action == 'collect':
         job, request, local = validate_job(args.job)
         result = collect(job, request, local)
