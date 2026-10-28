@@ -24,11 +24,20 @@ class DispatchedExit(unittest.TestCase):
             (job/'request.json').write_text(json.dumps(request));(job/'receipt.json').write_text(json.dumps(receipt))
             (job/'dispatch.claim').write_text('2345')
             script.with_suffix('.windows-job.json').write_text(json.dumps({'id':identifier,'job':str(job)}))
-            record={'script':str(script),'script_sha256':digest}
+            record={'script':str(script),'script_sha256':digest,'started_at':'2026-10-28T19:00:00+00:00'}
             good={'id':identifier,'helper_state':'exited','available':True,'instances':[],
                   'own_stage_observed_in_native_log':True,'local_stage':'owned-stage'}
             with patch.object(executor,'guest_call',return_value=good):
                 self.assertTrue(executor.dispatched_exit_proof(record,policy))
+            office={'pid':8,'started':'2026-10-27T07:00:00+00:00',
+                    'executable':r'C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE'}
+            with patch.object(executor,'guest_call',return_value={**good,'instances':[office]}):
+                self.assertTrue(executor.dispatched_exit_proof(record,policy))
+            for process in ({**office,'started':'2026-10-28T20:00:00+00:00'},
+                            {**office,'executable':r'C:\Program Files\Prism 11\prism_cn.exe'},
+                            {**office,'started':'unknown'}):
+                with patch.object(executor,'guest_call',return_value={**good,'instances':[process]}):
+                    self.assertFalse(executor.dispatched_exit_proof(record,policy))
             for changed in ({'helper_state':'alive'},{'helper_state':'unknown'},{'instances':[{'pid':123}]},
                             {'available':False},{'own_stage_observed_in_native_log':False},
                             {'local_stage':'foreign-stage'},{'id':str(uuid.uuid4())}):
@@ -39,4 +48,3 @@ class DispatchedExit(unittest.TestCase):
                 self.assertFalse(executor.dispatched_exit_proof(record,policy));guest.assert_not_called()
 
 if __name__=='__main__':unittest.main()
-

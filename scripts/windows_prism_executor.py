@@ -229,12 +229,37 @@ def refresh(script, policy):
     sync_outputs(script, job, json.loads((job / 'request.json').read_text()))
 
 
+def _only_preexisting_office(instances, record):
+    """Office predating this native-only dispatch is not a live Prism process.
+
+    Unknown identities, newly opened Office, and every Prism instance still
+    block recovery. This does not relax the separate PowerPoint job fence.
+    """
+    if not isinstance(instances, list):
+        return False
+    if not instances:
+        return True
+    import datetime
+    try:
+        dispatched = datetime.datetime.fromisoformat(record['started_at'].replace('Z', '+00:00'))
+        for item in instances:
+            if (not isinstance(item, dict) or type(item.get('pid')) is not int or item['pid'] <= 0
+                    or PureWindowsPath(item.get('executable', '')).name.casefold() != 'powerpnt.exe'):
+                return False
+            started = datetime.datetime.fromisoformat(item['started'].replace('Z', '+00:00'))
+            if started >= dispatched:
+                return False
+        return True
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
+
+
 def dispatched_exit_proof(record, policy):
     """Bound a exited dispatcher/native stage when transient PID was missed.
 
     This is interruption evidence only, never successful figure acceptance.
-    An alive or inaccessible dispatcher, any app process, changed inputs or
-    a missing owned-stage native log keeps the original execution fence.
+    An alive or inaccessible dispatcher, any Prism/new/unknown app process,
+    changed inputs or a missing owned-stage native log keeps the fence.
     """
     try:
         script=Path(record['script'])
@@ -252,7 +277,8 @@ def dispatched_exit_proof(record, policy):
             if Path(name).name!=name or hashlib.sha256((job/'input'/name).read_bytes()).hexdigest()!=digest:return False
         status=guest_call(policy,'native_status',job)
         return bool(status.get('id')==meta['id'] and status.get('helper_state')=='exited'
-                    and status.get('available') is True and status.get('instances')==[]
+                    and status.get('available') is True
+                    and _only_preexisting_office(status.get('instances'), record)
                     and status.get('own_stage_observed_in_native_log') is True
                     and status.get('local_stage')==receipt.get('local_stage'))
     except (KeyError,ValueError,OSError,RuntimeError,subprocess.SubprocessError):return False
